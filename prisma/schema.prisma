@@ -68,6 +68,7 @@ model RawTransaction {
   txnDate     DateTime               @map("txn_date") @db.Date
   description String                 @map("description_raw")
   amount      Decimal                @db.Decimal(14, 2)
+  balance     Decimal?               @map("closing_balance") @db.Decimal(14, 2)
   txnType     TransactionType        @map("txn_type")
   sourceRow   Int                    @map("source_row_index")
   createdAt   DateTime               @default(now()) @map("created_at")

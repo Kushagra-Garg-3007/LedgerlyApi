@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Ledgerly API: Debug Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/server.js",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "node",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Ledgerly API: Attach (Nodemon 9229)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ]
+}

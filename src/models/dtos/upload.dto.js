@@ -9,6 +9,8 @@ const UploadDtoSchema = z.object({
   uploadedAt: z.coerce.date(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+  importedRows: z.number().int().nonnegative().optional(),
+  rejectedRows: z.number().int().nonnegative().optional(),
 });
 
 module.exports = {

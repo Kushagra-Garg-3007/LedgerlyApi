@@ -1,9 +1,9 @@
 const express = require("express");
 
-const authRoutes = require("../modules/auth/auth.routes");
-const uploadRoutes = require("../modules/uploads/upload.routes");
-const transactionRoutes = require("../modules/transactions/transaction.routes");
-const ledgerRoutes = require("../modules/ledger/ledger.routes");
+const authRoutes = require("./auth.routes");
+const uploadRoutes = require("./upload.routes");
+const transactionRoutes = require("./transaction.routes");
+const ledgerRoutes = require("./ledger.routes");
 
 const router = express.Router();
 
