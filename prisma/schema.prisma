@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum UploadFileType {
+  CSV
+  XLS
+  XLSX
+}
+
+model User {
+  id              String                  @id @default(cuid())
+  name            String
+  email           String                  @unique
+  passwordHash    String                  @map("password_hash")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  uploads         StatementUpload[]
+  rawTransactions RawTransaction[]
+  categories      Category[]
+  entities        Entity[]
+  annotations     TransactionAnnotation[]
+
+  @@map("users")
+}
+
+model StatementUpload {
+  id              String           @id @default(cuid())
+  userId          String           @map("user_id")
+  fileName        String           @map("file_name")
+  fileType        UploadFileType   @map("file_type")
+  uploadStatus    UploadStatus     @default(PENDING) @map("upload_status")
+  parseError      String?          @map("parse_error")
+  uploadedAt      DateTime         @default(now()) @map("uploaded_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawTransactions RawTransaction[]
+
+  @@index([userId, uploadedAt])
+  @@map("statement_uploads")
+}
+
+model RawTransaction {
+  id          String                 @id @default(cuid())
+  uploadId    String                 @map("upload_id")
+  userId      String                 @map("user_id")
+  txnDate     DateTime               @map("txn_date") @db.Date
+  description String                 @map("description_raw")
+  amount      Decimal                @db.Decimal(14, 2)
+  txnType     TransactionType        @map("txn_type")
+  sourceRow   Int                    @map("source_row_index")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  upload      StatementUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annotation  TransactionAnnotation?
+
+  @@unique([uploadId, sourceRow])
+  @@index([userId, txnDate])
+  @@index([userId, txnType])
+  @@map("raw_transactions")
+}
+
+model Category {
+  id          String                  @id @default(cuid())
+  userId      String                  @map("user_id")
+  name        String
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annotations TransactionAnnotation[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Entity {
+  id          String                  @id @default(cuid())
+  userId      String                  @map("user_id")
+  name        String
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annotations TransactionAnnotation[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("entities")
+}
+
+model TransactionAnnotation {
+  id               String         @id @default(cuid())
+  rawTransactionId String         @unique @map("raw_transaction_id")
+  userId           String         @map("user_id")
+  categoryId       String?        @map("category_id")
+  entityId         String?        @map("entity_id")
+  note             String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  rawTransaction   RawTransaction @relation(fields: [rawTransactionId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  entity           Entity?        @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([entityId])
+  @@map("transaction_annotations")
+}
