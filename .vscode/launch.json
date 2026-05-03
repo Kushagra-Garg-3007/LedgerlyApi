@@ -10,19 +10,20 @@
       "runtimeExecutable": "node",
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Ledgerly API: Attach (Nodemon 9229)",
+      "name": "Ledgerly API: Debug with Nodemon",
       "type": "node",
-      "request": "attach",
-      "port": 9229,
+      "request": "launch",
+      "runtimeExecutable": "nodemon",
+      "program": "${workspaceFolder}/src/server.js",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
       "restart": true,
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "runtimeArgs": ["--inspect"],
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }

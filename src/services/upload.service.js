@@ -1,6 +1,7 @@
 const uploadData = require("../data/upload.data");
 const { UploadDtoSchema } = require("../models/dtos/upload.dto");
 const statementExcelParser = require("../parsers/statementExcel.parser");
+const { extractEntity } = require("../utils/entityExtractor");
 const { deleteFile } = require("../utils/file.utils");
 
 class UploadService {
@@ -52,6 +53,9 @@ class UploadService {
       }));
 
       const insertResult = await uploadData.createRawTransactions(insertRows);
+      const persistedTransactions = await uploadData.findRawTransactionsByUploadId(createdUpload.id);
+      const extractedByTransactionId = this.extractEntitiesByTransactionId(persistedTransactions);
+      await uploadData.saveExtractedEntitiesForTransactions(userId, extractedByTransactionId);
       const processedUpload = await uploadData.updateUploadStatus(createdUpload.id, "PROCESSED", null);
 
       return this.toUploadDto(
@@ -71,6 +75,20 @@ class UploadService {
     } finally {
       await deleteFile(file?.path);
     }
+  }
+
+  extractEntitiesByTransactionId(transactions = []) {
+    const extracted = new Map();
+
+    transactions.forEach((transaction) => {
+      const entityName = extractEntity(transaction?.description || "");
+      if (!entityName) {
+        return;
+      }
+      extracted.set(transaction.id, entityName);
+    });
+
+    return extracted;
   }
 
   /**
