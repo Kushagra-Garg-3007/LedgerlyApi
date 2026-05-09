@@ -54,7 +54,11 @@ class StatementExcelParser {
       return [];
     }
 
-    const headers = (matrix[headerIndex] || []).map((cell) => String(cell || "").trim());
+    const headers = [];
+    const headerRow = matrix[headerIndex] || [];
+    for (const cell of headerRow) {
+      headers.push(String(cell || "").trim());
+    }
     const dataRows = matrix.slice(headerIndex + 1);
     const parsed = [];
 
@@ -96,7 +100,14 @@ class StatementExcelParser {
    * Check if this row looks like a transaction header row.
    */
   looksLikeTransactionHeader(row) {
-    const normalizedCells = (row || []).map((cell) => normalizeHeader(cell)).filter(Boolean);
+    const normalizedCells = [];
+    for (const cell of row || []) {
+      const normalizedCell = normalizeHeader(cell);
+      if (!normalizedCell) {
+        continue;
+      }
+      normalizedCells.push(normalizedCell);
+    }
     const hasDate = normalizedCells.some((cell) => this.isDateHeader(cell));
     const hasDescription = normalizedCells.some((cell) => this.isDescriptionHeader(cell));
     const hasAmountSide = normalizedCells.some(
@@ -114,18 +125,52 @@ class StatementExcelParser {
    * Return null if key fields are missing.
    */
   mapRowToTransaction(row) {
-    const dateRaw = this.pickValue(row, (header) => this.isDateHeader(header));
-    const descriptionRaw = this.pickValue(row, (header) => this.isDescriptionHeader(header));
-    const amountRaw = this.pickValue(row, (header) => this.isAmountHeader(header));
-    const balanceRaw = this.pickValue(row, (header) => this.isBalanceHeader(header));
-    const debitRaw = this.pickValue(row, (header) => this.isDebitHeader(header));
-    const creditRaw = this.pickValue(row, (header) => this.isCreditHeader(header));
-    const typeRaw = this.pickValue(row, (header) => this.isTypeHeader(header));
+    const columns = {
+      date: null,
+      description: null,
+      amount: null,
+      balance: null,
+      debit: null,
+      credit: null,
+      type: null,
+    };
 
-    const txnDate = parseDate(dateRaw);
-    const description = typeof descriptionRaw === "string" ? descriptionRaw.trim() : "";
-    const balance = parseAmount(balanceRaw);
-    const { amount, txnType } = this.resolveAmountAndType(amountRaw, debitRaw, creditRaw, typeRaw);
+    const entries = Object.entries(row || {});
+    for (const [header, value] of entries) {
+      const normalizedHeader = normalizeHeader(header);
+
+      if (columns.date === null && this.isDateHeader(normalizedHeader)) {
+        columns.date = value;
+      }
+      if (columns.description === null && this.isDescriptionHeader(normalizedHeader)) {
+        columns.description = value;
+      }
+      if (columns.amount === null && this.isAmountHeader(normalizedHeader)) {
+        columns.amount = value;
+      }
+      if (columns.balance === null && this.isBalanceHeader(normalizedHeader)) {
+        columns.balance = value;
+      }
+      if (columns.debit === null && this.isDebitHeader(normalizedHeader)) {
+        columns.debit = value;
+      }
+      if (columns.credit === null && this.isCreditHeader(normalizedHeader)) {
+        columns.credit = value;
+      }
+      if (columns.type === null && this.isTypeHeader(normalizedHeader)) {
+        columns.type = value;
+      }
+    }
+
+    const txnDate = parseDate(columns.date);
+    const description = typeof columns.description === "string" ? columns.description.trim() : "";
+    const balance = parseAmount(columns.balance);
+    const { amount, txnType } = this.resolveAmountAndType(
+      columns.amount,
+      columns.debit,
+      columns.credit,
+      columns.type,
+    );
 
     if (!txnDate || !description || amount === null || !txnType) {
       return null;
@@ -139,21 +184,6 @@ class StatementExcelParser {
       balance,
     };
   }
-
-  /**
-   * Find the first column value that matches a header rule.
-   */
-  pickValue(row, predicate) {
-    const entries = Object.entries(row || {});
-    for (const [key, value] of entries) {
-      const normalizedKey = normalizeHeader(key);
-      if (predicate(normalizedKey)) {
-        return value;
-      }
-    }
-    return null;
-  }
-
   /**
    * Decide amount and type from either:
    * 1) one amount column, or 2) separate debit/credit columns.

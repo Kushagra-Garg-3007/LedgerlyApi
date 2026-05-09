@@ -10,7 +10,9 @@ class UploadService {
    * Save upload info, parse the file, save transactions, and update status.
    */
   async uploadStatement({ file, userId }) {
-    const fileType = this.getFileType(file?.originalname);
+    const fileName = file?.originalname;
+    const filePath = file?.path;
+    const fileType = this.getFileType(fileName);
     if (!fileType) {
       return null;
     }
@@ -19,7 +21,7 @@ class UploadService {
     try {
       createdUpload = await uploadData.createUploadRecord({
         userId,
-        fileName: file?.originalname,
+        fileName,
         fileType,
         uploadStatus: "PENDING",
       });
@@ -28,7 +30,7 @@ class UploadService {
         return null;
       }
 
-      const parsedTransactions = statementExcelParser.parseTransactions(file.path);
+      const parsedTransactions = statementExcelParser.parseTransactions(filePath);
       if (parsedTransactions.validRows.length === 0) {
         await uploadData.updateUploadStatus(
           createdUpload.id,
@@ -40,8 +42,7 @@ class UploadService {
         throw error;
       }
 
-      // Add user and upload IDs here so parser can stay simple and independent.
-      const insertRows = parsedTransactions.validRows.map((row) => ({
+      const rowsToInsert = parsedTransactions.validRows.map((row) => ({
         uploadId: createdUpload.id,
         userId,
         txnDate: row.txnDate,
@@ -52,7 +53,7 @@ class UploadService {
         sourceRow: row.sourceRow,
       }));
 
-      const insertResult = await uploadData.createRawTransactions(insertRows);
+      const insertResult = await uploadData.createRawTransactions(rowsToInsert);
       const persistedTransactions = await uploadData.findRawTransactionsByUploadId(createdUpload.id);
       const extractedByTransactionId = this.extractEntitiesByTransactionId(persistedTransactions);
       await uploadData.saveExtractedEntitiesForTransactions(userId, extractedByTransactionId);
@@ -65,15 +66,19 @@ class UploadService {
       );
     } catch (error) {
       if (createdUpload?.id) {
-        await uploadData.updateUploadStatus(
-          createdUpload.id,
-          "FAILED",
-          error?.message?.slice(0, 250) || "Failed to process uploaded statement",
-        );
+        try {
+          await uploadData.updateUploadStatus(
+            createdUpload.id,
+            "FAILED",
+            error?.message?.slice(0, 250) || "Failed to process uploaded statement",
+          );
+        } catch (_statusError) {
+          // Keep original error because upload processing is the main failure reason.
+        }
       }
       throw error;
     } finally {
-      await deleteFile(file?.path);
+      await deleteFile(filePath);
     }
   }
 

@@ -12,11 +12,15 @@ const {
 const {
   UpdateTransactionAnnotationSchema,
 } = require("../models/requestModel/updateTransactionAnnotation.request.model");
+const {
+  AssignTransactionCategorySchema,
+} = require("../models/requestModel/assignTransactionCategory.request.model");
 
 class TransactionController {
   constructor() {
     this.listTransactions = asyncHandler(this.listTransactions.bind(this));
     this.updateAnnotation = asyncHandler(this.updateAnnotation.bind(this));
+    this.updateCategory = asyncHandler(this.updateCategory.bind(this));
   }
 
   async listTransactions(req, res) {
@@ -41,6 +45,28 @@ class TransactionController {
       req.user?.id,
       annotationRequest,
     );
+    return ApiResponse.send(res, buildUpdateTransactionAnnotationResponse(annotationDto));
+  }
+
+  async updateCategory(req, res) {
+    const parsedParams = UpdateTransactionAnnotationParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return ApiResponse.send(res, buildValidationErrorResponse(parsedParams.error));
+    }
+
+    const parsedBody = AssignTransactionCategorySchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return ApiResponse.send(res, buildValidationErrorResponse(parsedBody.error));
+    }
+
+    const annotationDto = await transactionService.updateAnnotation(
+      parsedParams.data.id,
+      req.user?.id,
+      {
+        categoryId: parsedBody.data.categoryId,
+      },
+    );
+
     return ApiResponse.send(res, buildUpdateTransactionAnnotationResponse(annotationDto));
   }
 }

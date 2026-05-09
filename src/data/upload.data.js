@@ -65,14 +65,14 @@ class UploadData {
     if (!uploadId) {
       return [];
     }
+
     try {
       return await prisma.rawTransaction.findMany({
         where: { uploadId },
         select: { id: true, description: true },
       });
-    }
-    catch (error) {
-      throw error
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -81,65 +81,97 @@ class UploadData {
       return { entitiesCreated: 0, linksUpdated: 0 };
     }
 
-    const extractedEntries = Array.from(extractedByTransactionId.entries())
-      .filter(([transactionId, entityName]) => Boolean(transactionId && entityName));
+    const extractedEntries = [];
+    for (const [transactionId, entityName] of extractedByTransactionId.entries()) {
+      if (!transactionId || !entityName) {
+        continue;
+      }
+      extractedEntries.push([transactionId, entityName]);
+    }
 
     if (extractedEntries.length === 0) {
       return { entitiesCreated: 0, linksUpdated: 0 };
     }
 
-    const uniqueEntityNames = Array.from(new Set(extractedEntries.map(([, entityName]) => entityName)));
-
-    const createdEntities = await prisma.entity.createMany({
-      data: uniqueEntityNames.map((name) => ({ userId, name })),
-      skipDuplicates: true,
-    });
-
-    const entities = await prisma.entity.findMany({
-      where: {
-        userId,
-        name: { in: uniqueEntityNames },
-      },
-      select: { id: true, name: true },
-    });
-
-    const entityIdByName = new Map(entities.map((row) => [row.name, row.id]));
-    const transactionIds = extractedEntries.map(([transactionId]) => transactionId);
-    const existingAnnotations = await prisma.transactionAnnotation.findMany({
-      where: { rawTransactionId: { in: transactionIds } },
-      select: { rawTransactionId: true, entityId: true },
-    });
-    const existingEntityIdByTransactionId = new Map(
-      existingAnnotations.map((row) => [row.rawTransactionId, row.entityId]),
-    );
-
-    let linksUpdated = 0;
-    for (const [transactionId, entityName] of extractedEntries) {
-      const entityId = entityIdByName.get(entityName);
-      if (!entityId) {
+    const seenEntityNames = new Set();
+    const uniqueEntityNames = [];
+    for (const [, entityName] of extractedEntries) {
+      if (seenEntityNames.has(entityName)) {
         continue;
       }
-
-      if (existingEntityIdByTransactionId.get(transactionId)) {
-        continue;
-      }
-
-      await prisma.transactionAnnotation.upsert({
-        where: { rawTransactionId: transactionId },
-        update: { entityId, userId },
-        create: {
-          rawTransactionId: transactionId,
-          userId,
-          entityId,
-        },
-      });
-      linksUpdated += 1;
+      seenEntityNames.add(entityName);
+      uniqueEntityNames.push(entityName);
     }
 
-    return {
-      entitiesCreated: createdEntities.count || 0,
-      linksUpdated,
-    };
+    const entityCreateRows = [];
+    for (const name of uniqueEntityNames) {
+      entityCreateRows.push({ userId, name });
+    }
+
+    try {
+      const createdEntities = await prisma.entity.createMany({
+        data: entityCreateRows,
+        skipDuplicates: true,
+      });
+
+      const entities = await prisma.entity.findMany({
+        where: {
+          userId,
+          name: { in: uniqueEntityNames },
+        },
+        select: { id: true, name: true },
+      });
+
+      const entityIdByName = new Map();
+      for (const entity of entities) {
+        entityIdByName.set(entity.name, entity.id);
+      }
+
+      const transactionIds = [];
+      for (const [transactionId] of extractedEntries) {
+        transactionIds.push(transactionId);
+      }
+
+      const existingAnnotations = await prisma.transactionAnnotation.findMany({
+        where: { rawTransactionId: { in: transactionIds } },
+        select: { rawTransactionId: true, entityId: true },
+      });
+
+      const existingEntityIdByTransactionId = new Map();
+      for (const annotation of existingAnnotations) {
+        existingEntityIdByTransactionId.set(annotation.rawTransactionId, annotation.entityId);
+      }
+
+      let linksUpdated = 0;
+      for (const [transactionId, entityName] of extractedEntries) {
+        const entityId = entityIdByName.get(entityName);
+        if (!entityId) {
+          continue;
+        }
+
+        if (existingEntityIdByTransactionId.get(transactionId)) {
+          continue;
+        }
+
+        await prisma.transactionAnnotation.upsert({
+          where: { rawTransactionId: transactionId },
+          update: { entityId, userId },
+          create: {
+            rawTransactionId: transactionId,
+            userId,
+            entityId,
+          },
+        });
+        linksUpdated += 1;
+      }
+
+      return {
+        entitiesCreated: createdEntities.count || 0,
+        linksUpdated,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

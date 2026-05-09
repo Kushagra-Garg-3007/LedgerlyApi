@@ -8,10 +8,21 @@ class TransactionData {
       return [];
     }
 
-    return getPrisma().rawTransaction.findMany({
-      where: { userId },
-      orderBy: { txnDate: "desc" },
-    });
+    try {
+      return await getPrisma().rawTransaction.findMany({
+        where: { userId },
+        orderBy: { txnDate: "desc" },
+        include: {
+          annotation: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   async updateAnnotation(transactionId, userId, annotationData) {
@@ -21,17 +32,21 @@ class TransactionData {
 
     const { categoryId = null, entityId = null, note = null } = annotationData || {};
 
-    return getPrisma().transactionAnnotation.upsert({
-      where: { rawTransactionId: transactionId },
-      update: { categoryId, entityId, note, userId },
-      create: {
-        rawTransactionId: transactionId,
-        userId,
-        categoryId,
-        entityId,
-        note,
-      },
-    });
+    try {
+      return await getPrisma().transactionAnnotation.upsert({
+        where: { rawTransactionId: transactionId },
+        update: { categoryId, entityId, note, userId },
+        create: {
+          rawTransactionId: transactionId,
+          userId,
+          categoryId,
+          entityId,
+          note,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

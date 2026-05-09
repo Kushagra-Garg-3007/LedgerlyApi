@@ -1,4 +1,5 @@
 const transactionData = require("../data/transaction.data");
+const categoryData = require("../data/category.data");
 const { TransactionDtoSchema } = require("../models/dtos/transaction.dto");
 const { AnnotationDtoSchema } = require("../models/dtos/annotation.dto");
 
@@ -6,21 +7,29 @@ class TransactionService {
   async listTransactions(userId) {
     const transactions = await transactionData.listByUserId(userId);
     const runningBalanceByTxnId = this.buildRunningBalanceMap(transactions);
+    const responseRows = [];
 
-    return TransactionDtoSchema.array().parse(
-      transactions.map((entity) => ({
+    for (const entity of transactions) {
+      const balance =
+        entity.balance === null || entity.balance === undefined ? null : Number(entity.balance);
+
+      responseRows.push({
         id: entity.id,
         uploadId: entity.uploadId,
         txnDate: entity.txnDate,
         description: entity.description,
         amount: Number(entity.amount || 0),
-        balance: entity.balance === null || entity.balance === undefined ? null : Number(entity.balance),
+        balance,
         balanceAfterTxn: runningBalanceByTxnId.get(entity.id) ?? 0,
         txnType: entity.txnType,
         sourceRow: entity.sourceRow,
         createdAt: entity.createdAt,
-      })),
-    );
+        categoryId: entity.annotation?.categoryId || null,
+        categoryName: entity.annotation?.category?.name || null,
+      });
+    }
+
+    return TransactionDtoSchema.array().parse(responseRows);
   }
 
   /**
@@ -40,7 +49,7 @@ class TransactionService {
     let running = 0;
     const byId = new Map();
 
-    ordered.forEach((txn) => {
+    for (const txn of ordered) {
       const statementBalance =
         txn.balance === null || txn.balance === undefined ? null : Number(txn.balance);
 
@@ -52,12 +61,21 @@ class TransactionService {
       }
 
       byId.set(txn.id, running);
-    });
+    }
 
     return byId;
   }
 
   async updateAnnotation(transactionId, userId, annotationData) {
+    if (annotationData?.categoryId) {
+      const category = await categoryData.findByIdAndUserId(annotationData.categoryId, userId);
+      if (!category) {
+        const error = new Error("Category not found");
+        error.statusCode = 404;
+        throw error;
+      }
+    }
+
     const annotation = await transactionData.updateAnnotation(transactionId, userId, annotationData);
     if (!annotation) {
       return null;

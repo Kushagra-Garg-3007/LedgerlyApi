@@ -22,15 +22,20 @@ const ValidationErrorResponseSchema = BaseResponseSchema.extend({
 });
 
 function buildValidationErrorResponse(error) {
+  const validationErrors = [];
+  for (const issue of error.issues) {
+    validationErrors.push({
+      path: issue.path.join("."),
+      message: issue.message,
+    });
+  }
+
   return ValidationErrorResponseSchema.parse({
     statusCode: 400,
     success: false,
     message: "Validation failed",
     data: null,
-    errors: error.issues.map((issue) => ({
-      path: issue.path.join("."),
-      message: issue.message,
-    })),
+    errors: validationErrors,
   });
 }
 

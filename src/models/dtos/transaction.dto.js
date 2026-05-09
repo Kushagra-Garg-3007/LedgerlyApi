@@ -11,6 +11,8 @@ const TransactionDtoSchema = z.object({
   txnType: z.enum(["DEBIT", "CREDIT"]),
   sourceRow: z.number().int(),
   createdAt: z.coerce.date(),
+  categoryId: z.string().nullable().optional(),
+  categoryName: z.string().nullable().optional(),
 });
 
 module.exports = {
