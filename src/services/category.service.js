@@ -1,5 +1,6 @@
 const categoryData = require("../data/category.data");
 const { CategoryDtoSchema } = require("../models/dtos/category.dto");
+const { normalizedName } = require("../utils/string.utils");
 
 const DEFAULT_CATEGORY_NAMES = [
   "Food",
@@ -47,7 +48,7 @@ class CategoryService {
   }
 
   async createCategory(userId, name) {
-    const normalizedName = this.normalizeCategoryName(name);
+    const normalizedName = normalizedName(name);
     try {
       const created = await categoryData.createCategory(userId, normalizedName);
       return this.toCategoryDto(created);
@@ -62,7 +63,7 @@ class CategoryService {
   }
 
   async updateCategory(categoryId, userId, name) {
-    const normalizedName = this.normalizeCategoryName(name);
+    const normalizedName = normalizedName(name);
     let updated = null;
     try {
       updated = await categoryData.updateCategoryName(categoryId, userId, normalizedName);
@@ -92,10 +93,6 @@ class CategoryService {
       throw notFoundError;
     }
     return true;
-  }
-
-  normalizeCategoryName(name) {
-    return String(name || "").trim();
   }
 
   toCategoryDto(category) {

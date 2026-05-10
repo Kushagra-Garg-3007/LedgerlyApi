@@ -9,6 +9,11 @@ function normalizeHeader(value) {
     .trim();
 }
 
+function normalizeName(name) {
+  return String(name || "").trim();
+}
+
 module.exports = {
   normalizeHeader,
+  normalizeName
 };

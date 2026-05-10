@@ -34,6 +34,48 @@ class LedgerData {
       throw error;
     }
   }
+
+  async listTransactionsByUserId(userId) {
+    if (!userId) {
+      return [];
+    }
+
+    try {
+      return await getPrisma().rawTransaction.findMany({
+        where: { userId },
+        orderBy: [{ txnDate: "desc" }, { sourceRow: "desc" }],
+        select: {
+          id: true,
+          txnDate: true,
+          txnType: true,
+          amount: true,
+          balance: true,
+          annotation: {
+            select: {
+              id: true,
+              note: true,
+              entityId: true,
+              categoryId: true,
+              entity: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = new LedgerData();
