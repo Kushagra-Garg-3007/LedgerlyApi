@@ -57,20 +57,31 @@ class AuthService {
     }
 
     const userDto = toUserDto(user);
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       {
         id: userDto.id,
         email: userDto.email,
         name: userDto.name,
       },
       env.jwtSecret,
+      { expiresIn: "15m" },
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: userDto.id,
+        email: userDto.email,
+        name: userDto.name,
+      },
+      env.refreshSecret,
       { expiresIn: "7d" },
     );
 
     return {
       status: "authenticated",
       user: userDto,
-      token,
+      accessToken,
+      refreshToken
     };
   }
 
@@ -81,6 +92,20 @@ class AuthService {
     }
 
     return toUserDto(user);
+  }
+
+  refresh(user) {
+
+    const accessToken = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      env.jwtSecret,
+      { expiresIn: "15m" },
+    );
+    return accessToken;
   }
 }
 

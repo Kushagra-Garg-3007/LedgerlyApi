@@ -2,23 +2,26 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const cookieParse = require("cookie-parser");
 
 const apiRoutes = require("./routes");
-const ApiResponse = require("./utils/apiResponse");
 const { notFoundHandler, errorHandler } = require("./middlewares/error.middleware");
 
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  }),
+)
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(cookieParse());
 
 app.get("/health", (_req, res) => {
-  ApiResponse.success(res, {
-    message: "Service is healthy",
-    data: { status: "ok", service: "ledgerly-api" },
-  });
+  return res.status(200).json({ status: "ok", service: "ledgerly-api" });
 });
 
 app.use("/api", apiRoutes);

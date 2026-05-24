@@ -1,11 +1,10 @@
 const jwt = require("jsonwebtoken");
 const env = require("../config/env");
 
-function authMiddleware(req, res, next) {
-  const token = req.cookies?.accessToken;
-
+function refreshMiddleware(req, res, next) {
+  const token = req.cookies?.refreshToken;
   try {
-    const payload = jwt.verify(token, env.jwtSecret);
+    const payload = jwt.verify(token, env.refreshSecret);
     req.user = payload;
     return next();
   } catch (_error) {
@@ -13,4 +12,4 @@ function authMiddleware(req, res, next) {
   }
 }
 
-module.exports = authMiddleware;
+module.exports = refreshMiddleware;

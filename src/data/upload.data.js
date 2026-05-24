@@ -173,6 +173,28 @@ class UploadData {
       throw error;
     }
   }
+
+  async getUserStatementData(userId) {
+    if (!userId) {
+      return [];
+    }
+
+    return await prisma.statementUpload.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        fileName: true,
+        fileType: true,
+        uploadStatus: true,
+        parseError: true,
+        uploadedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ uploadedAt: "desc" }, { createdAt: "desc" }],
+    });
+  }
 }
 
 module.exports = new UploadData();

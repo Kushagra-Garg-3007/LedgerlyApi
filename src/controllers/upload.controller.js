@@ -1,16 +1,12 @@
-const ApiResponse = require("../utils/apiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const uploadService = require("../services/upload.service");
-const { buildUploadStatementResponse } = require("../models/responseModel/uploadStatement.response.model");
-const {
-  buildUploadInvalidPayloadResponse,
-} = require("../models/responseModel/uploadInvalidPayload.response.model");
-const { buildValidationErrorResponse } = require("../models/responseModel/base.response.model");
 const { UploadStatementSchema } = require("../models/requestModel/uploadStatement.request.model");
+const { throwValidationError } = require("../utils/validation");
 
 class UploadController {
   constructor() {
     this.uploadStatement = asyncHandler(this.uploadStatement.bind(this));
+    this.recent = asyncHandler(this.recent.bind(this));
   }
 
   async uploadStatement(req, res) {
@@ -19,17 +15,26 @@ class UploadController {
       userId: req.user?.id,
     });
     if (!parsedRequest.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedRequest.error));
+      throwValidationError(parsedRequest.error);
     }
 
     const uploadRequest = parsedRequest.data;
     const uploadDto = await uploadService.uploadStatement(uploadRequest);
 
     if (!uploadDto) {
-      return ApiResponse.send(res, buildUploadInvalidPayloadResponse());
+      const error = new Error("Invalid upload payload");
+      error.statusCode = 400;
+      throw error;
     }
 
-    return ApiResponse.send(res, buildUploadStatementResponse(uploadDto));
+    return res.status(201).json(uploadDto);
+  }
+
+  async recent(req, res) {
+    const userId = req.user?.id;
+    const uploads = await uploadService.recent(userId);
+
+    return res.status(200).json(uploads);
   }
 }
 

@@ -6,5 +6,5 @@ const { uploadStatementFile } = require("../middlewares/upload.middleware");
 const router = express.Router();
 
 router.post("/statement", authMiddleware, uploadStatementFile, uploadController.uploadStatement);
-
+router.get("/recent", authMiddleware, uploadController.recent);
 module.exports = router;

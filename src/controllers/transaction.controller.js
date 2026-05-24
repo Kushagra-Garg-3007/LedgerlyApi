@@ -1,11 +1,5 @@
-const ApiResponse = require("../utils/apiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const transactionService = require("../services/transaction.service");
-const { buildListTransactionsResponse } = require("../models/responseModel/listTransactions.response.model");
-const {
-  buildUpdateTransactionAnnotationResponse,
-} = require("../models/responseModel/updateTransactionAnnotation.response.model");
-const { buildValidationErrorResponse } = require("../models/responseModel/base.response.model");
 const {
   UpdateTransactionAnnotationParamsSchema,
 } = require("../models/requestModel/updateTransactionAnnotationParams.request.model");
@@ -15,6 +9,7 @@ const {
 const {
   AssignTransactionCategorySchema,
 } = require("../models/requestModel/assignTransactionCategory.request.model");
+const { throwValidationError } = require("../utils/validation");
 
 class TransactionController {
   constructor() {
@@ -25,18 +20,18 @@ class TransactionController {
 
   async listTransactions(req, res) {
     const transactionsDto = await transactionService.listTransactions(req.user?.id);
-    return ApiResponse.send(res, buildListTransactionsResponse(transactionsDto));
+    return res.status(200).json(transactionsDto);
   }
 
   async updateAnnotation(req, res) {
     const parsedParams = UpdateTransactionAnnotationParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedParams.error));
+      throwValidationError(parsedParams.error);
     }
 
     const parsedBody = UpdateTransactionAnnotationSchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedBody.error));
+      throwValidationError(parsedBody.error);
     }
 
     const annotationRequest = parsedBody.data;
@@ -45,18 +40,24 @@ class TransactionController {
       req.user?.id,
       annotationRequest,
     );
-    return ApiResponse.send(res, buildUpdateTransactionAnnotationResponse(annotationDto));
+    if (!annotationDto) {
+      const error = new Error("Transaction annotation not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return res.status(200).json(annotationDto);
   }
 
   async updateCategory(req, res) {
     const parsedParams = UpdateTransactionAnnotationParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedParams.error));
+      throwValidationError(parsedParams.error);
     }
 
     const parsedBody = AssignTransactionCategorySchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedBody.error));
+      throwValidationError(parsedBody.error);
     }
 
     const annotationDto = await transactionService.updateAnnotation(
@@ -67,7 +68,13 @@ class TransactionController {
       },
     );
 
-    return ApiResponse.send(res, buildUpdateTransactionAnnotationResponse(annotationDto));
+    if (!annotationDto) {
+      const error = new Error("Transaction annotation not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return res.status(200).json(annotationDto);
   }
 }
 

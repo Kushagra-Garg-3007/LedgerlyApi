@@ -11,7 +11,6 @@ class ApiResponse {
     this.message = message;
     this.data = data;
     this.errors = errors;
-    this.timestamp = new Date().toISOString();
   }
 
   static send(res, options = {}) {

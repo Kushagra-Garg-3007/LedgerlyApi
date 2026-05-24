@@ -82,6 +82,37 @@ class UploadService {
     }
   }
 
+  async recent(userId) {
+    const uploads = await uploadData.getUserStatementData(userId);
+
+    const shapedUploads = uploads.map((upload) => {
+      const status = (upload.uploadStatus || "").toUpperCase();
+      let normalizedStatus = "Processing";
+      if (status === "FAILED") {
+        normalizedStatus = "Failed";
+      } else if (status === "PROCESSED" || status === "COMPLETED") {
+        normalizedStatus = "Processed";
+      }
+
+      return {
+        id: upload.id,
+        fileName: upload.fileName,
+        type: upload.fileType,
+        status: normalizedStatus,
+        uploadDate: upload.uploadedAt || upload.createdAt,
+      };
+    });
+
+    return {
+      totalUploads: shapedUploads.length,
+      failedUploads: shapedUploads.filter((upload) => upload.status === "Failed").length,
+      processingUploads: shapedUploads.filter((upload) => upload.status === "Processing").length,
+      completedUploads: shapedUploads.filter((upload) => upload.status === "Processed").length,
+      lastProcessedFileName: shapedUploads[0]?.fileName || null,
+      uploads: shapedUploads,
+    };
+  }
+
   extractEntitiesByTransactionId(transactions = []) {
     const extracted = new Map();
 

@@ -1,14 +1,9 @@
-const ApiResponse = require("../utils/apiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const categoryService = require("../services/category.service");
-const { buildValidationErrorResponse } = require("../models/responseModel/base.response.model");
-const { buildListCategoriesResponse } = require("../models/responseModel/listCategories.response.model");
-const { buildCreateCategoryResponse } = require("../models/responseModel/createCategory.response.model");
-const { buildUpdateCategoryResponse } = require("../models/responseModel/updateCategory.response.model");
-const { buildDeleteCategoryResponse } = require("../models/responseModel/deleteCategory.response.model");
 const { CreateCategorySchema } = require("../models/requestModel/createCategory.request.model");
 const { UpdateCategorySchema } = require("../models/requestModel/updateCategory.request.model");
 const { CategoryParamsSchema } = require("../models/requestModel/categoryParams.request.model");
+const { throwValidationError } = require("../utils/validation");
 
 class CategoryController {
   constructor() {
@@ -20,28 +15,28 @@ class CategoryController {
 
   async listCategories(req, res) {
     const categories = await categoryService.listCategories(req.user?.id);
-    return ApiResponse.send(res, buildListCategoriesResponse(categories));
+    return res.status(200).json(categories);
   }
 
   async createCategory(req, res) {
     const parsedBody = CreateCategorySchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedBody.error));
+      throwValidationError(parsedBody.error);
     }
 
     const category = await categoryService.createCategory(req.user?.id, parsedBody.data.name);
-    return ApiResponse.send(res, buildCreateCategoryResponse(category));
+    return res.status(201).json(category);
   }
 
   async updateCategory(req, res) {
     const parsedParams = CategoryParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedParams.error));
+      throwValidationError(parsedParams.error);
     }
 
     const parsedBody = UpdateCategorySchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedBody.error));
+      throwValidationError(parsedBody.error);
     }
 
     const category = await categoryService.updateCategory(
@@ -50,17 +45,17 @@ class CategoryController {
       parsedBody.data.name,
     );
 
-    return ApiResponse.send(res, buildUpdateCategoryResponse(category));
+    return res.status(200).json(category);
   }
 
   async deleteCategory(req, res) {
     const parsedParams = CategoryParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
-      return ApiResponse.send(res, buildValidationErrorResponse(parsedParams.error));
+      throwValidationError(parsedParams.error);
     }
 
     const deleted = await categoryService.deleteCategory(parsedParams.data.id, req.user?.id);
-    return ApiResponse.send(res, buildDeleteCategoryResponse(deleted));
+    return res.status(200).json({ deleted });
   }
 }
 

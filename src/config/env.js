@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const requiredVars = ["DATABASE_URL", "JWT_SECRET"];
+const requiredVars = ["DATABASE_URL", "ACCESS_TOKEN_SECRET", "REFRESH_TOKEN_SECRET"];
 
 for (const key of requiredVars) {
   if (!process.env[key]) {
@@ -15,5 +15,6 @@ module.exports = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 4000),
   databaseUrl: process.env.DATABASE_URL,
-  jwtSecret: process.env.JWT_SECRET,
+  jwtSecret: process.env.ACCESS_TOKEN_SECRET,
+  refreshSecret: process.env.REFRESH_TOKEN_SECRET
 };
