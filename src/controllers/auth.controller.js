@@ -75,8 +75,15 @@ class AuthController {
   }
 
   async profile(req, res) {
-    const user = req.user;
-    return res.status(200).json(user);
+    res.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, private',
+    )
+
+    return res.status(200).json({
+      success: true,
+      data: req.user,
+    })
   }
 
   async refresh(req, res) {
