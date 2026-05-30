@@ -1,7 +1,8 @@
 const { z } = require("zod");
+const { IdParamSchema } = require("../../utils/id.utils");
 
 const CategoryParamsSchema = z.object({
-  id: z.string().min(1),
+  id: IdParamSchema,
 });
 
 module.exports = {

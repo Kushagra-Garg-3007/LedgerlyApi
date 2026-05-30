@@ -13,7 +13,8 @@ class LedgerController {
   }
 
   async listTransactions(req, res) {
-    const transactionsDto = await ledgerService.listTransactions(req.user?.id);
+    
+    const transactionsDto = await ledgerService.listTransactions(req);
     return res.status(200).json(transactionsDto);
   }
 }

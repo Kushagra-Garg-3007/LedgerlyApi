@@ -98,7 +98,7 @@ class AuthService {
 
     const accessToken = jwt.sign(
       {
-        id: user.id,
+        id: user.id?.toString(),
         email: user.email,
         name: user.name,
       },

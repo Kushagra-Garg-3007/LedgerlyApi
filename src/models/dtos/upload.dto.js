@@ -1,8 +1,9 @@
 const { z } = require("zod");
+const { DtoIdSchema } = require("../../utils/id.utils");
 
 const UploadDtoSchema = z.object({
-  id: z.string().min(1),
-  userId: z.string().min(1),
+  id: DtoIdSchema,
+  userId: DtoIdSchema,
   fileName: z.string().min(1),
   fileType: z.enum(["CSV", "XLS", "XLSX"]),
   uploadStatus: z.enum(["PENDING", "PROCESSED", "FAILED"]),

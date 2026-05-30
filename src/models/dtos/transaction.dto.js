@@ -1,8 +1,9 @@
 const { z } = require("zod");
+const { DtoIdSchema, NullableDtoIdSchema } = require("../../utils/id.utils");
 
 const TransactionDtoSchema = z.object({
-  id: z.string().min(1),
-  uploadId: z.string().min(1),
+  id: DtoIdSchema,
+  uploadId: DtoIdSchema,
   txnDate: z.coerce.date(),
   description: z.string(),
   amount: z.number(),
@@ -11,7 +12,7 @@ const TransactionDtoSchema = z.object({
   txnType: z.enum(["DEBIT", "CREDIT"]),
   sourceRow: z.number().int(),
   createdAt: z.coerce.date(),
-  categoryId: z.string().nullable().optional(),
+  categoryId: NullableDtoIdSchema.optional(),
   categoryName: z.string().nullable().optional(),
 });
 

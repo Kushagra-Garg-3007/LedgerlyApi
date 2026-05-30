@@ -92,6 +92,50 @@ class TransactionService {
       updatedAt: annotation.updatedAt,
     });
   }
+
+  async applyCategoryToEntityTransactions(transactionId, userId, categoryId) {
+    if (categoryId) {
+      const category = await categoryData.findByIdAndUserId(categoryId, userId);
+      if (!category) {
+        const error = new Error("Category not found");
+        error.statusCode = 404;
+        throw error;
+      }
+    }
+
+    const annotation = await transactionData.findAnnotationByTransactionAndUserId(
+      transactionId,
+      userId,
+    );
+    if (!annotation) {
+      const error = new Error("Transaction annotation not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (!annotation.entityId) {
+      const error = new Error("Transaction does not have an entity to update");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const result = await transactionData.applyCategoryToEntity(
+      userId,
+      annotation.entityId,
+      categoryId,
+    );
+    if (!result.entity) {
+      const error = new Error("Entity not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return {
+      entityId: annotation.entityId.toString(),
+      categoryId: categoryId?.toString() || null,
+      annotationsUpdated: result.annotationsUpdated,
+    };
+  }
 }
 
 module.exports = new TransactionService();

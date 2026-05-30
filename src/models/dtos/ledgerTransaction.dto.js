@@ -1,7 +1,8 @@
 const { z } = require("zod");
+const { DtoIdSchema } = require("../../utils/id.utils");
 
 const LedgerTransactionDtoSchema = z.object({
-  id: z.string().min(1),
+  id: DtoIdSchema,
   date: z.string().min(1),
   type: z.enum(["DEBIT", "CREDIT"]),
   creditAmount: z.number().nullable(),
@@ -9,13 +10,13 @@ const LedgerTransactionDtoSchema = z.object({
   balance: z.number().nullable(),
   entity: z
     .object({
-      id: z.string().min(1),
+      id: DtoIdSchema,
       name: z.string().min(1),
     })
     .nullable(),
   category: z
     .object({
-      id: z.string().min(1),
+      id: DtoIdSchema,
       name: z.string().min(1),
     })
     .nullable(),

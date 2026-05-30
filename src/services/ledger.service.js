@@ -12,59 +12,90 @@ class LedgerService {
     });
   }
 
-  async listTransactions(userId) {
-    const transactions = await ledgerData.listTransactionsByUserId(userId);
-    const responseRows = [];
+  async listTransactions(req) {
+    let {
+      page = 1,
+      limit = 31,
+      fromDate,
+      toDate,
+      type,
+      categoryId,
+      sortDirection = 'desc',
+    } = req.query;
 
-    for (const transaction of transactions) {
+    const now = new Date();
+
+    fromDate = fromDate
+      ? new Date(fromDate)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+
+    toDate = toDate
+      ? new Date(toDate)
+      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    toDate.setHours(23, 59, 59, 999);
+
+    sortDirection =
+      sortDirection === 'asc' ? 'asc' : 'desc';
+
+    const result = await ledgerData.listTransactionsByUserId({
+      userId: req.user.id,
+      startDate: fromDate,
+      endDate: toDate,
+      page: Number(page),
+      limit: Number(limit),
+      type,
+      categoryId: categoryId ? BigInt(categoryId) : undefined,
+      sortDirection,
+    });
+
+    const responseRows = result.transactions.map((transaction) => {
       const amount = Number(transaction.amount || 0);
-      const balance =
-        transaction.balance === null || transaction.balance === undefined
-          ? null
-          : Number(transaction.balance);
 
-      let creditAmount = null;
-      let debitAmount = null;
-
-      if (transaction.txnType === "CREDIT") {
-        creditAmount = amount;
-      } else if (transaction.txnType === "DEBIT") {
-        debitAmount = amount;
-      }
-
-      const date = new Date(transaction.txnDate).toISOString().slice(0, 10);
-      const annotation = transaction.annotation;
-
-      const entity =
-        annotation?.entity && annotation?.entityId
-          ? {
-              id: annotation.entity.id,
-              name: annotation.entity.name,
-            }
-          : null;
-
-      const category =
-        annotation?.category && annotation?.categoryId
-          ? {
-              id: annotation.category.id,
-              name: annotation.category.name,
-            }
-          : null;
-
-      responseRows.push({
-        id: transaction.id,
-        date,
+      return {
+        id: transaction.id.toString(),
+        date: transaction.txnDate.toISOString().slice(0, 10),
         type: transaction.txnType,
-        creditAmount,
-        debitAmount,
-        balance,
-        entity,
-        category,
-        note: annotation?.note || null,
-      });
-    }
 
-    return LedgerTransactionDtoSchema.array().parse(responseRows);
+        creditAmount:
+          transaction.txnType === 'CREDIT'
+            ? amount
+            : null,
+
+        debitAmount:
+          transaction.txnType === 'DEBIT'
+            ? amount
+            : null,
+
+        balance:
+          transaction.balance == null
+            ? null
+            : Number(transaction.balance),
+
+        entity:
+          transaction.annotation?.entity
+            ? {
+                id: transaction.annotation.entity.id.toString(),
+                name: transaction.annotation.entity.name,
+              }
+            : null,
+
+        category:
+          transaction.annotation?.category
+            ? {
+                id: transaction.annotation.category.id.toString(),
+                name: transaction.annotation.category.name,
+              }
+            : null,
+
+        note: transaction.annotation?.note ?? null,
+      };
+    });
+
+    return {
+      data: LedgerTransactionDtoSchema.array().parse(responseRows),
+      totalItems: result.totalItems,
+    };
   }
 }
 

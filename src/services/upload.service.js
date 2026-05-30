@@ -3,6 +3,7 @@ const { UploadDtoSchema } = require("../models/dtos/upload.dto");
 const statementExcelParser = require("../parsers/statementExcel.parser");
 const { extractEntity } = require("../utils/entityExtractor");
 const { deleteFile } = require("../utils/file.utils");
+const crypto = require('crypto');
 
 class UploadService {
   /**
@@ -51,6 +52,7 @@ class UploadService {
         balance: row.balance,
         txnType: row.txnType,
         sourceRow: row.sourceRow,
+        transactionHash: this.generateTransactionHash(userId, row)
       }));
 
       const insertResult = await uploadData.createRawTransactions(rowsToInsert);
@@ -136,6 +138,21 @@ class UploadService {
       return ext;
     }
     return null;
+  }
+
+  generateTransactionHash(userId, transaction) {
+    return crypto
+      .createHash('sha256')
+      .update(
+        [
+          userId,
+          transaction.txnDate?.toISOString?.() ?? transaction.txnDate,
+          transaction.description?.trim(),
+          transaction.amount?.toString(),
+          transaction.txnType,
+        ].join('|')
+      )
+      .digest('base64');
   }
 
   /**

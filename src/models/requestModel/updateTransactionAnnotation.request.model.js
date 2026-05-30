@@ -1,8 +1,9 @@
 const { z } = require("zod");
+const { OptionalNullableIdSchema } = require("../../utils/id.utils");
 
 const UpdateTransactionAnnotationSchema = z.object({
-  categoryId: z.string().min(1).nullable().optional(),
-  entityId: z.string().min(1).nullable().optional(),
+  categoryId: OptionalNullableIdSchema,
+  entityId: OptionalNullableIdSchema,
   note: z.string().max(500).nullable().optional(),
 });
 

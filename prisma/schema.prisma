@@ -29,7 +29,7 @@ enum UploadFileType {
 }
 
 model User {
-  id              String                  @id @default(cuid())
+  id              BigInt                  @id @default(autoincrement())
   name            String
   email           String                  @unique
   passwordHash    String                  @map("password_hash")
@@ -45,8 +45,8 @@ model User {
 }
 
 model StatementUpload {
-  id              String           @id @default(cuid())
-  userId          String           @map("user_id")
+  id              BigInt           @id @default(autoincrement())
+  userId          BigInt           @map("user_id")
   fileName        String           @map("file_name")
   fileType        UploadFileType   @map("file_type")
   uploadStatus    UploadStatus     @default(PENDING) @map("upload_status")
@@ -62,20 +62,22 @@ model StatementUpload {
 }
 
 model RawTransaction {
-  id          String                 @id @default(cuid())
-  uploadId    String                 @map("upload_id")
-  userId      String                 @map("user_id")
-  txnDate     DateTime               @map("txn_date") @db.Date
-  description String                 @map("description_raw")
-  amount      Decimal                @db.Decimal(14, 2)
-  balance     Decimal?               @map("closing_balance") @db.Decimal(14, 2)
-  txnType     TransactionType        @map("txn_type")
-  sourceRow   Int                    @map("source_row_index")
-  createdAt   DateTime               @default(now()) @map("created_at")
-  upload      StatementUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
-  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  annotation  TransactionAnnotation?
+  id              BigInt                 @id @default(autoincrement())
+  uploadId        BigInt                 @map("upload_id")
+  userId          BigInt                 @map("user_id")
+  txnDate         DateTime               @map("txn_date") @db.Date
+  description     String                 @map("description_raw")
+  amount          Decimal                @db.Decimal(14, 2)
+  balance         Decimal?               @map("closing_balance") @db.Decimal(14, 2)
+  txnType         TransactionType        @map("txn_type")
+  transactionHash String                 @map("transaction_hash")
+  sourceRow       Int                    @map("source_row_index")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  upload          StatementUpload        @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annotation      TransactionAnnotation?
 
+  @@unique([userId, transactionHash])
   @@unique([uploadId, sourceRow])
   @@index([userId, txnDate])
   @@index([userId, txnType])
@@ -83,12 +85,13 @@ model RawTransaction {
 }
 
 model Category {
-  id          String                  @id @default(cuid())
-  userId      String?                 @map("user_id")
+  id          BigInt                  @id @default(autoincrement())
+  userId      BigInt?                 @map("user_id")
   name        String
   createdAt   DateTime                @default(now()) @map("created_at")
   updatedAt   DateTime                @updatedAt @map("updated_at")
   user        User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entities    Entity[]
   annotations TransactionAnnotation[]
 
   @@unique([userId, name])
@@ -98,25 +101,28 @@ model Category {
 }
 
 model Entity {
-  id          String                  @id @default(cuid())
-  userId      String                  @map("user_id")
+  id          BigInt                  @id @default(autoincrement())
+  userId      BigInt                  @map("user_id")
+  categoryId  BigInt?                 @map("category_id")
   name        String
   createdAt   DateTime                @default(now()) @map("created_at")
   updatedAt   DateTime                @updatedAt @map("updated_at")
   user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   annotations TransactionAnnotation[]
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([categoryId])
   @@map("entities")
 }
 
 model TransactionAnnotation {
-  id               String         @id @default(cuid())
-  rawTransactionId String         @unique @map("raw_transaction_id")
-  userId           String         @map("user_id")
-  categoryId       String?        @map("category_id")
-  entityId         String?        @map("entity_id")
+  id               BigInt         @id @default(autoincrement())
+  rawTransactionId BigInt         @unique @map("raw_transaction_id")
+  userId           BigInt         @map("user_id")
+  categoryId       BigInt?        @map("category_id")
+  entityId         BigInt?        @map("entity_id")
   note             String?
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")

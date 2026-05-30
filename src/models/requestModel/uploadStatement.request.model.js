@@ -1,7 +1,8 @@
 const { z } = require("zod");
+const { IdParamSchema } = require("../../utils/id.utils");
 
 const UploadStatementSchema = z.object({
-  userId: z.string().min(1),
+  userId: IdParamSchema,
   file: z.object({
     originalname: z.string().min(1),
     path: z.string().min(1),

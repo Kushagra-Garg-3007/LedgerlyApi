@@ -1,11 +1,12 @@
 const { z } = require("zod");
+const { DtoIdSchema, NullableDtoIdSchema } = require("../../utils/id.utils");
 
 const AnnotationDtoSchema = z.object({
-  id: z.string().min(1),
-  rawTransactionId: z.string().min(1),
-  userId: z.string().min(1),
-  categoryId: z.string().min(1).nullable(),
-  entityId: z.string().min(1).nullable(),
+  id: DtoIdSchema,
+  rawTransactionId: DtoIdSchema,
+  userId: DtoIdSchema,
+  categoryId: NullableDtoIdSchema,
+  entityId: NullableDtoIdSchema,
   note: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),

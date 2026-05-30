@@ -1,4 +1,7 @@
 const prisma = require("../config/prisma");
+const categoryData = require("./category.data");
+
+const DEFAULT_ENTITY_CATEGORY_NAME = "MISC";
 
 class UploadData {
   async createUploadRecord(payload) {
@@ -103,12 +106,17 @@ class UploadData {
       uniqueEntityNames.push(entityName);
     }
 
-    const entityCreateRows = [];
-    for (const name of uniqueEntityNames) {
-      entityCreateRows.push({ userId, name });
-    }
-
     try {
+      const defaultCategory = await categoryData.getOrCreateGlobalByName(DEFAULT_ENTITY_CATEGORY_NAME);
+      const entityCreateRows = [];
+      for (const name of uniqueEntityNames) {
+        entityCreateRows.push({
+          userId,
+          name,
+          categoryId: defaultCategory.id,
+        });
+      }
+
       const createdEntities = await prisma.entity.createMany({
         data: entityCreateRows,
         skipDuplicates: true,
@@ -119,12 +127,12 @@ class UploadData {
           userId,
           name: { in: uniqueEntityNames },
         },
-        select: { id: true, name: true },
+        select: { id: true, name: true, categoryId: true },
       });
 
-      const entityIdByName = new Map();
+      const entityByName = new Map();
       for (const entity of entities) {
-        entityIdByName.set(entity.name, entity.id);
+        entityByName.set(entity.name, entity);
       }
 
       const transactionIds = [];
@@ -144,8 +152,8 @@ class UploadData {
 
       let linksUpdated = 0;
       for (const [transactionId, entityName] of extractedEntries) {
-        const entityId = entityIdByName.get(entityName);
-        if (!entityId) {
+        const entity = entityByName.get(entityName);
+        if (!entity) {
           continue;
         }
 
@@ -155,11 +163,12 @@ class UploadData {
 
         await prisma.transactionAnnotation.upsert({
           where: { rawTransactionId: transactionId },
-          update: { entityId, userId },
+          update: { entityId: entity.id, userId },
           create: {
             rawTransactionId: transactionId,
             userId,
-            entityId,
+            entityId: entity.id,
+            categoryId: entity.categoryId,
           },
         });
         linksUpdated += 1;

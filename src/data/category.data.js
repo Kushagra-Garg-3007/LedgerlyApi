@@ -18,6 +18,42 @@ class CategoryData {
     }
   }
 
+  async findGlobalByName(name) {
+    if (!name) {
+      return null;
+    }
+
+    try {
+      return await prisma.category.findFirst({
+        where: {
+          userId: null,
+          name,
+        },
+        orderBy: { id: "asc" },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getOrCreateGlobalByName(name) {
+    const existing = await this.findGlobalByName(name);
+    if (existing) {
+      return existing;
+    }
+
+    try {
+      return await prisma.category.create({
+        data: {
+          userId: null,
+          name,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async listByUserId(userId) {
     if (!userId) {
       return [];

@@ -60,6 +60,15 @@ class TransactionController {
       throwValidationError(parsedBody.error);
     }
 
+    if (parsedBody.data.applyToAll) {
+      const result = await transactionService.applyCategoryToEntityTransactions(
+        parsedParams.data.id,
+        req.user?.id,
+        parsedBody.data.categoryId,
+      );
+      return res.status(200).json(result);
+    }
+
     const annotationDto = await transactionService.updateAnnotation(
       parsedParams.data.id,
       req.user?.id,
