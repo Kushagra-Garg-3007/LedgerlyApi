@@ -1,16 +1,6 @@
 const categoryData = require("../data/category.data");
 const { CategoryDtoSchema } = require("../models/dtos/category.dto");
-const { normalizedName } = require("../utils/string.utils");
-
-const DEFAULT_CATEGORY_NAMES = [
-  "Food",
-  "Salary",
-  "Rent",
-  "Travel",
-  "Shopping",
-  "Bills",
-  "Investment",
-];
+const { normalizeName } = require("../utils/string.utils");
 
 class CategoryService {
   // async ensureGlobalCategories() {
@@ -48,7 +38,7 @@ class CategoryService {
   }
 
   async createCategory(userId, name) {
-    const normalizedName = normalizedName(name);
+    const normalizedName = normalizeName(name);
     try {
       const created = await categoryData.createCategory(userId, normalizedName);
       return this.toCategoryDto(created);
