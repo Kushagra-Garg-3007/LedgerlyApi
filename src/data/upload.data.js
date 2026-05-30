@@ -107,7 +107,7 @@ class UploadData {
     }
 
     try {
-      const defaultCategory = await categoryData.getOrCreateGlobalByName(DEFAULT_ENTITY_CATEGORY_NAME);
+      const defaultCategory = await categoryData.findGlobalCategoryByName(DEFAULT_ENTITY_CATEGORY_NAME);
       const entityCreateRows = [];
       for (const name of uniqueEntityNames) {
         entityCreateRows.push({

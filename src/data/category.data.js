@@ -18,7 +18,7 @@ class CategoryData {
     }
   }
 
-  async findGlobalByName(name) {
+  async findGlobalCategoryByName(name) {
     if (!name) {
       return null;
     }
@@ -30,24 +30,6 @@ class CategoryData {
           name,
         },
         orderBy: { id: "asc" },
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getOrCreateGlobalByName(name) {
-    const existing = await this.findGlobalByName(name);
-    if (existing) {
-      return existing;
-    }
-
-    try {
-      return await prisma.category.create({
-        data: {
-          userId: null,
-          name,
-        },
       });
     } catch (error) {
       throw error;
@@ -150,20 +132,6 @@ class CategoryData {
     }
   }
 
-  async createManyIfMissing(rows) {
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return { count: 0 };
-    }
-
-    try {
-      return await prisma.category.createMany({
-        data: rows,
-        skipDuplicates: true,
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
 }
 
 module.exports = new CategoryData();
