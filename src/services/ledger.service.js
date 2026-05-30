@@ -97,6 +97,40 @@ class LedgerService {
       totalItems: result.totalItems,
     };
   }
+
+  async updateEntiesWithCategory(userId, payload) {
+    const result = await ledgerData.updateEntityCategoryMappingWithAnnotations({
+      userId,
+      entityId: payload.entityId,
+      categoryId: payload.categoryId,
+      rawTransactionId: payload.rawTransactionId,
+      note: payload.note
+    });
+
+    return {
+      entityId: result.entity.id.toString(),
+      categoryId: result.entity.categoryId?.toString() || null,
+      annotationsUpdated: result.annotationsUpdated,
+      noteUpdated: result.noteUpdated,
+    };
+  }
+
+  async updateTransactionAnnotationCategory(userId, payload) {
+    const annotation = await ledgerData.updateTransactionAnnotationCategory({
+      userId,
+      categoryId: payload.categoryId,
+      rawTransactionId: payload.rawTransactionId,
+      note: payload.note,
+    });
+
+    return {
+      annotationId: annotation.id.toString(),
+      rawTransactionId: annotation.rawTransactionId.toString(),
+      categoryId: annotation.categoryId?.toString() || null,
+      note: annotation.note,
+      noteUpdated: payload.hasNote,
+    };
+  }
 }
 
 module.exports = new LedgerService();

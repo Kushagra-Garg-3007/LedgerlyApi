@@ -1,3 +1,5 @@
+const prisma = require("../config/prisma");
+
 function getPrisma() {
   return require("../config/prisma");
 }
@@ -115,6 +117,84 @@ class LedgerData {
       transactions,
       totalItems,
     };
+  }
+
+  async updateEntityCategoryMappingWithAnnotations({
+    userId,
+    entityId,
+    categoryId,
+    rawTransactionId,
+    note,
+  }) {
+    const hasNote =
+      typeof note === "string" && note.trim().length > 0;
+
+    if (hasNote && !rawTransactionId) {
+      const error = new Error(
+        "rawTransactionId is required when updating a note"
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const entity = await tx.entity.update({
+        where: { id: entityId },
+        data: { categoryId },
+      });
+
+      const annotationResult =
+        await tx.transactionAnnotation.updateMany({
+          where: {
+            userId,
+            entityId,
+          },
+          data: {
+            categoryId,
+          },
+        });
+
+      if (hasNote) {
+        await tx.transactionAnnotation.update({
+          where: {
+            userId,
+            rawTransactionId,
+          },
+          data: {
+            note,
+          },
+        });
+      }
+
+      return {
+        entity,
+        annotationsUpdated: annotationResult.count,
+        noteUpdated: hasNote,
+      };
+    });
+  }
+
+  async updateTransactionAnnotationCategory({
+    userId,
+    categoryId,
+    rawTransactionId,
+    note,
+  }) {
+
+    const hasNote = typeof note === "string" && note.trim().length > 0;
+
+    const data = { categoryId };
+    if (hasNote) {
+      data.note = note;
+    }
+
+    return await prisma.transactionAnnotation.update({
+      where: {
+        userId,
+        rawTransactionId,
+      },
+      data,
+    });
   }
 }
 

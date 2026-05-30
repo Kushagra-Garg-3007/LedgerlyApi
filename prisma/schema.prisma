@@ -134,5 +134,6 @@ model TransactionAnnotation {
   @@index([userId])
   @@index([categoryId])
   @@index([entityId])
+  @@index([userId, entityId])
   @@map("transaction_annotations")
 }
