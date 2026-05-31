@@ -150,6 +150,7 @@ class UploadService {
           transaction.description?.trim(),
           transaction.amount?.toString(),
           transaction.txnType,
+          transaction.sourceRow
         ].join('|')
       )
       .digest('base64');
