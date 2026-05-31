@@ -1,9 +1,5 @@
 const prisma = require("../config/prisma");
 
-function getPrisma() {
-  return require("../config/prisma");
-}
-
 class LedgerData {
   async getSummaryByUserId(userId) {
     if (!userId) {
@@ -11,26 +7,37 @@ class LedgerData {
         totalDebit: 0,
         totalCredit: 0,
         transactionCount: 0,
+        balance: 0,
       };
     }
 
     try {
-      const [debitAgg, creditAgg, transactionCount] = await Promise.all([
-        getPrisma().rawTransaction.aggregate({
+      const [debitAgg, creditAgg, transactionCount, balance] = await Promise.all([
+        prisma.rawTransaction.aggregate({
           where: { userId, txnType: "DEBIT" },
           _sum: { amount: true },
         }),
-        getPrisma().rawTransaction.aggregate({
+        prisma.rawTransaction.aggregate({
           where: { userId, txnType: "CREDIT" },
           _sum: { amount: true },
         }),
-        getPrisma().rawTransaction.count({ where: { userId } }),
+        prisma.rawTransaction.count({ where: { userId } }),
+        prisma.rawTransaction.findFirst({
+          where: { userId },
+          orderBy: {
+            id: 'desc',
+          },
+          select: {
+            balance: true,
+          },
+        })
       ]);
 
       return {
         totalDebit: Number(debitAgg._sum.amount || 0),
         totalCredit: Number(creditAgg._sum.amount || 0),
         transactionCount,
+        balance: Number(balance.balance || 0)
       };
     } catch (error) {
       throw error;
@@ -70,8 +77,8 @@ class LedgerData {
     }
 
     const [transactions, totalItems] =
-      await getPrisma().$transaction([
-        getPrisma().rawTransaction.findMany({
+      await prisma.$transaction([
+        prisma.rawTransaction.findMany({
           where,
           skip,
           take: limit,
@@ -108,7 +115,7 @@ class LedgerData {
           },
         }),
 
-        getPrisma().rawTransaction.count({
+        prisma.rawTransaction.count({
           where,
         }),
       ]);
