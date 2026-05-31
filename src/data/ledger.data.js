@@ -25,7 +25,7 @@ class LedgerData {
         prisma.rawTransaction.findFirst({
           where: { userId },
           orderBy: {
-            id: 'desc',
+            txnDate: 'desc',
           },
           select: {
             balance: true,

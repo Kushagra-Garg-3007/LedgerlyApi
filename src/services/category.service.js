@@ -53,10 +53,9 @@ class CategoryService {
   }
 
   async updateCategory(categoryId, userId, name) {
-    const normalizedName = normalizedName(name);
     let updated = null;
     try {
-      updated = await categoryData.updateCategoryName(categoryId, userId, normalizedName);
+      updated = await categoryData.updateCategoryName(categoryId, userId, name);
     } catch (error) {
       if (error?.code === "P2002") {
         const conflictError = new Error("Category name already exists");
@@ -88,10 +87,8 @@ class CategoryService {
   toCategoryDto(category) {
     return CategoryDtoSchema.parse({
       id: category.id,
-      userId: category.userId,
       name: category.name,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
+      items: category?.items || 0
     });
   }
 }

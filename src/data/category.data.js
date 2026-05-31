@@ -42,20 +42,33 @@ class CategoryData {
     }
 
     try {
-      return await prisma.category.findMany({
+      const categories = await prisma.category.findMany({
         where: {
           OR: [
             { userId: null },
             { userId },
           ],
         },
-        orderBy: [
-          { userId: "desc" },
-          { name: "asc" },
-        ],
+        select: {
+          id: true,
+          name: true,
+          _count: {
+            select: {
+              annotations: {
+                where: {userId}
+              }
+            }
+          }
+        }
       });
+
+      return categories.map(category => ({
+        id: category.id,
+        name: category.name,
+        items: category._count.annotations,
+      }));
     } catch (error) {
-      throw error;
+      throw error.message;
     }
   }
 
@@ -99,14 +112,6 @@ class CategoryData {
     }
 
     try {
-      const category = await prisma.category.findFirst({
-        where: { id: categoryId, userId },
-      });
-
-      if (!category) {
-        return null;
-      }
-
       return await prisma.category.update({
         where: { id: categoryId },
         data: { name },
