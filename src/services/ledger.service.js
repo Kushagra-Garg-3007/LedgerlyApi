@@ -24,17 +24,9 @@ class LedgerService {
       sortDirection = 'desc',
     } = req.query;
 
-    const now = new Date();
+    fromDate = fromDate ? new Date(fromDate): null;
 
-    fromDate = fromDate
-      ? new Date(fromDate)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
-
-    toDate = toDate
-      ? new Date(toDate)
-      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    toDate.setHours(23, 59, 59, 999);
+    toDate = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
 
     sortDirection =
       sortDirection === 'asc' ? 'asc' : 'desc';

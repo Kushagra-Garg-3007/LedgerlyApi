@@ -58,11 +58,17 @@ class LedgerData {
 
     const where = {
       userId,
-      txnDate: {
-        gte: startDate,
-        lte: endDate,
-      },
     };
+
+    if(startDate || endDate){
+      where.txnDate = {};
+      if(startDate){
+        where.txnDate.gte = startDate
+      }
+      if(endDate){
+        where.txnDate.lte = endDate
+      }
+    }
 
     if (type) {
       where.txnType = type;
