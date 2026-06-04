@@ -53,12 +53,12 @@ class AuthController {
     }
 
     res.cookie("accessToken", result.accessToken, {
-      cookieOptions,
+      ...cookieOptions,
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", result.refreshToken, {
-      cookieOptions,
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -90,7 +90,7 @@ class AuthController {
     const user = req.user;
     const token = authService.refresh(user);
     res.cookie("accessToken", token, {
-      cookieOptions,
+      ...cookieOptions,
       maxAge: 15 * 60 * 1000,
     });
     return res.status(200).json({ accessToken: token });
