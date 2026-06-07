@@ -26,7 +26,11 @@ class LedgerService {
 
     fromDate = fromDate ? new Date(fromDate): null;
 
-    toDate = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+    toDate = toDate ? new Date(toDate) : null;
+
+    if (toDate) {
+      toDate.setHours(23, 59, 59, 999);
+    }
 
     sortDirection =
       sortDirection === 'asc' ? 'asc' : 'desc';
